@@ -43,6 +43,7 @@ option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of sta
 # endif(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 
 include(${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/cppcheck.cmake)
 
 add_subdirectory(src)
 
