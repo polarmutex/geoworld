@@ -42,6 +42,8 @@ option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of sta
 #     target_link_options(coverage_config INTERFACE --coverage)
 # endif(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 
+include(${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake)
+
 add_subdirectory(src)
 
 # if (BUILD_UNIT_TESTS)

@@ -9,6 +9,9 @@ default: build
 cmake:
 	cmake -B build -S .  -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DCMAKE_BUILD_TYPE=Debug
 
+.PHONY: format
+format:
+	cmake --build ./build --target format
 
 .PHONY: build
 build:

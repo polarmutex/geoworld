@@ -16,29 +16,29 @@ class CMainWindow;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
-  Q_OBJECT
+    Q_OBJECT
 
-public:
-  MainWindow(QWidget *parent = nullptr);
-  ~MainWindow();
+   public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
-protected:
-  virtual void closeEvent(QCloseEvent *event) override;
+   protected:
+    virtual void closeEvent(QCloseEvent *event) override;
 
-private:
-  QAction *SavePerspectiveAction = nullptr;
-  QWidgetAction *PerspectiveListAction = nullptr;
-  QComboBox *PerspectiveComboBox = nullptr;
+   private:
+    QAction *SavePerspectiveAction = nullptr;
+    QWidgetAction *PerspectiveListAction = nullptr;
+    QComboBox *PerspectiveComboBox = nullptr;
 
-  Ui::CMainWindow *ui;
+    Ui::CMainWindow *ui;
 
-  ads::CDockManager *DockManager;
-  ads::CDockAreaWidget *StatusDockArea;
-  ads::CDockWidget *TimelineDockWidget;
+    ads::CDockManager *DockManager;
+    ads::CDockAreaWidget *StatusDockArea;
+    ads::CDockWidget *TimelineDockWidget;
 
-  void createPerspectiveUi();
+    void createPerspectiveUi();
 
-private slots:
-  void savePerspective();
+   private slots:
+    void savePerspective();
 };
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H
