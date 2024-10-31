@@ -18,3 +18,7 @@ build:
 	# cd build && make -j
 	# cmake --build build --config Release
 	cmake --build build --config Debug
+
+.PHONY: clean
+clean:
+	cd build && make clean
