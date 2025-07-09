@@ -48,6 +48,7 @@
               codespell
               conan
               cppcheck
+              cpplint
               # doxygen
               # gtest
               # lcov

@@ -45,6 +45,7 @@ option(BUILD_SHARED_LIBS "Build all libraries as shared libraries instead of sta
 include(${CMAKE_SOURCE_DIR}/cmake/clang_format.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/cppcheck.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/clang_tidy.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/cpplint.cmake)
 
 add_subdirectory(src)
 

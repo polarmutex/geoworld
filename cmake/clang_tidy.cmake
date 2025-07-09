@@ -5,5 +5,6 @@ if(CLANGTIDY_BIN)
   list(
         APPEND CMAKE_CXX_CLANG_TIDY
             "${CLANGTIDY_BIN}"
+            "-checks=*"
     )
 endif()
