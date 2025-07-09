@@ -36,11 +36,14 @@ GeoWorld is a C++ application built with Qt6 that provides a map-based interface
 # Enter development shell
 nix develop
 
-# Install dependencies with Conan
-conan install . --build=missing
+# Use helper functions in dev shell
+setup-conan    # Install Conan dependencies
+configure      # Configure CMake build
+build          # Build the project
+run            # Run the application
 ```
 
-### Build Commands
+### Build Commands (Alternative)
 ```bash
 # Configure build
 cmake --preset=default
@@ -50,6 +53,18 @@ cmake --build --preset=default
 
 # Run tests
 ctest --preset=default
+```
+
+### Package with Nix
+```bash
+# Build package
+nix build
+
+# Run packaged application
+nix run
+
+# Enter development shell
+nix develop
 ```
 
 ### Code Quality
