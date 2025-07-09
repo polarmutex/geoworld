@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "MapWidget.h"
+#include "IPlugin.h"
 #include <QApplication>
 #include <QAction>
 #include <QMenu>
@@ -7,20 +7,23 @@
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QMessageBox>
+#include <QLabel>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_mapWidget(nullptr)
     , m_dockManager(nullptr)
+    , m_pluginManager(nullptr)
     , m_coordLabel(nullptr)
     , m_zoomLabel(nullptr)
     , m_scaleLabel(nullptr)
-    , m_layerCombo(nullptr)
     , m_mapDockWidget(nullptr)
 {
     setWindowTitle("GeoWorld - Geospatial Data Visualization");
     setMinimumSize(1200, 800);
     
+    setupPlugins();
     setupUI();
     setupMenuBar();
     setupToolBar();
@@ -46,16 +49,8 @@ void MainWindow::setupUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
     
-    // Create map widget
-    m_mapWidget = new MapWidget(this);
-    
-    // Map widget will be added to docking system, not main layout
-    
-    // Connect map widget signals
-    connect(m_mapWidget, &MapWidget::coordinateChanged, 
-            this, &MainWindow::onCoordinateUpdate);
-    connect(m_mapWidget, &MapWidget::zoomChanged, 
-            this, &MainWindow::onZoomChanged);
+    // Load map plugin
+    loadMapPlugin();
 }
 
 void MainWindow::setupMenuBar()
@@ -71,10 +66,15 @@ void MainWindow::setupMenuBar()
     // View menu
     QMenu *viewMenu = menuBar()->addMenu("&View");
     
-    QAction *resetViewAction = new QAction("Reset &View", this);
-    resetViewAction->setShortcut(QKeySequence("Ctrl+R"));
-    connect(resetViewAction, &QAction::triggered, m_mapWidget, &MapWidget::resetView);
-    viewMenu->addAction(resetViewAction);
+    QAction *refreshAction = new QAction("&Refresh Plugins", this);
+    refreshAction->setShortcut(QKeySequence("F5"));
+    connect(refreshAction, &QAction::triggered, [this]() {
+        if (m_pluginManager) {
+            m_pluginManager->unloadPlugins();
+            m_pluginManager->loadPlugins();
+        }
+    });
+    viewMenu->addAction(refreshAction);
     
     // Tools menu
     QMenu *toolsMenu = menuBar()->addMenu("&Tools");
@@ -100,37 +100,13 @@ void MainWindow::setupToolBar()
     QToolBar *mainToolBar = addToolBar("Main");
     mainToolBar->setObjectName("MainToolBar");
     
-    // Map layer selector
-    mainToolBar->addWidget(new QLabel("Map Layer:"));
-    m_layerCombo = new QComboBox(this);
-    m_layerCombo->addItem("OpenStreetMap", "osm");
-    m_layerCombo->addItem("Satellite", "satellite");
-    m_layerCombo->addItem("Terrain", "terrain");
-    m_layerCombo->setCurrentIndex(0);
-    
-    connect(m_layerCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &MainWindow::onMapLayerChanged);
-    
-    mainToolBar->addWidget(m_layerCombo);
-    mainToolBar->addSeparator();
-    
-    // Zoom controls
-    QAction *zoomInAction = new QAction("Zoom In", this);
-    zoomInAction->setShortcut(QKeySequence::ZoomIn);
-    connect(zoomInAction, &QAction::triggered, m_mapWidget, &MapWidget::zoomIn);
-    mainToolBar->addAction(zoomInAction);
-    
-    QAction *zoomOutAction = new QAction("Zoom Out", this);
-    zoomOutAction->setShortcut(QKeySequence::ZoomOut);
-    connect(zoomOutAction, &QAction::triggered, m_mapWidget, &MapWidget::zoomOut);
-    mainToolBar->addAction(zoomOutAction);
-    
-    mainToolBar->addSeparator();
-    
-    // Reset view
-    QAction *resetAction = new QAction("Reset View", this);
-    connect(resetAction, &QAction::triggered, m_mapWidget, &MapWidget::resetView);
-    mainToolBar->addAction(resetAction);
+    // General application actions only
+    QAction *aboutAction = new QAction("About", this);
+    connect(aboutAction, &QAction::triggered, [this]() {
+        QMessageBox::about(this, "About GeoWorld", 
+            "GeoWorld v1.0.0\nGeospatial Data Visualization Platform\nPlugin-based Architecture");
+    });
+    mainToolBar->addAction(aboutAction);
 }
 
 void MainWindow::setupStatusBar()
@@ -169,11 +145,6 @@ void MainWindow::setupDockingSystem()
     m_dockManager->addDockWidget(ads::CenterDockWidgetArea, m_mapDockWidget);
 }
 
-void MainWindow::onMapLayerChanged(int index)
-{
-    QString layerType = m_layerCombo->itemData(index).toString();
-    m_mapWidget->setMapLayer(layerType);
-}
 
 void MainWindow::onCoordinateUpdate(double latitude, double longitude)
 {
@@ -191,4 +162,66 @@ void MainWindow::onZoomChanged(int zoom)
     m_scaleLabel->setText(QString("Scale: 1:%1").arg(qRound(scale)));
 }
 
-#include "MainWindow.moc"
+void MainWindow::setupPlugins()
+{
+    m_pluginManager = new PluginManager(this);
+    
+    // Connect plugin manager signals
+    connect(m_pluginManager, &PluginManager::pluginLoaded,
+            this, &MainWindow::onPluginLoaded);
+    connect(m_pluginManager, &PluginManager::pluginUnloaded,
+            this, &MainWindow::onPluginUnloaded);
+    
+    // Load plugins from standard locations
+    m_pluginManager->loadPlugins();
+}
+
+void MainWindow::loadMapPlugin()
+{
+    // Try to find any map plugin
+    QStringList plugins = m_pluginManager->availablePlugins();
+    IPlugin* mapPlugin = nullptr;
+    
+    for (const QString& pluginName : plugins) {
+        IPlugin* plugin = m_pluginManager->getPlugin(pluginName);
+        if (plugin && plugin->capabilities().contains("mapping")) {
+            mapPlugin = plugin;
+            break;
+        }
+    }
+    
+    if (mapPlugin) {
+        QWidget* mapWidget = mapPlugin->createWidget(this);
+        if (mapWidget) {
+            // Try to connect signals using QObject::connect with string-based connection
+            QObject::connect(mapWidget, SIGNAL(coordinateChanged(double, double)), 
+                           this, SLOT(onCoordinateUpdate(double, double)));
+            QObject::connect(mapWidget, SIGNAL(zoomChanged(int)), 
+                           this, SLOT(onZoomChanged(int)));
+            
+            m_mapWidget = mapWidget;
+        }
+    }
+    
+    // Display error if no plugin found
+    if (!m_mapWidget) {
+        qCritical() << "No map plugin found! Please ensure map plugin is installed.";
+        // Create a simple error label instead of fallback
+        QLabel* errorLabel = new QLabel("No map plugin found!\nPlease install a map plugin.", this);
+        errorLabel->setAlignment(Qt::AlignCenter);
+        errorLabel->setStyleSheet("QLabel { color: red; font-size: 16px; }");
+        m_mapWidget = errorLabel;
+    }
+}
+
+void MainWindow::onPluginLoaded(const QString& name)
+{
+    qDebug() << "Plugin loaded:" << name;
+    statusBar()->showMessage(QString("Plugin loaded: %1").arg(name), 3000);
+}
+
+void MainWindow::onPluginUnloaded(const QString& name)
+{
+    qDebug() << "Plugin unloaded:" << name;
+    statusBar()->showMessage(QString("Plugin unloaded: %1").arg(name), 3000);
+}

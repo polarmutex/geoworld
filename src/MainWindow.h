@@ -11,8 +11,9 @@
 #include <qt6advanceddocking/DockManager.h>
 #include <qt6advanceddocking/DockWidget.h>
 #include <qt6advanceddocking/DockAreaWidget.h>
+#include "PluginManager.h"
 
-class MapWidget;
+class IPlugin;
 
 class MainWindow : public QMainWindow
 {
@@ -23,9 +24,10 @@ public:
     ~MainWindow();
 
 private slots:
-    void onMapLayerChanged(int index);
     void onCoordinateUpdate(double latitude, double longitude);
     void onZoomChanged(int zoom);
+    void onPluginLoaded(const QString& name);
+    void onPluginUnloaded(const QString& name);
 
 private:
     void setupUI();
@@ -33,18 +35,18 @@ private:
     void setupToolBar();
     void setupStatusBar();
     void setupDockingSystem();
+    void setupPlugins();
+    void loadMapPlugin();
     
     // UI Components
-    MapWidget *m_mapWidget;
+    QWidget *m_mapWidget;
     ads::CDockManager *m_dockManager;
+    PluginManager *m_pluginManager;
     
     // Status bar components
     QLabel *m_coordLabel;
     QLabel *m_zoomLabel;
     QLabel *m_scaleLabel;
-    
-    // Toolbar components
-    QComboBox *m_layerCombo;
     
     // Dock widgets
     ads::CDockWidget *m_mapDockWidget;

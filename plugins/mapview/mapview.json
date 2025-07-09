@@ -1,0 +1,9 @@
+{
+    "name": "Map View",
+    "version": "1.0.0",
+    "description": "Interactive map widget using Qt Location with OpenStreetMap tiles",
+    "author": "GeoWorld Team",
+    "category": "visualization",
+    "capabilities": ["mapping", "geolocation", "tile-rendering", "coordinate-display"],
+    "dependencies": ["QtLocation", "QtPositioning", "QtNetwork"]
+}

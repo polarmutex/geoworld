@@ -175,6 +175,7 @@
               echo "Configuring CMake build..."
               cmake -S . -B build \
                 -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_PLUGINS=ON \
                 -DCMAKE_PREFIX_PATH="${pkgs.qt6.qtbase};${pkgs.qt6.qtlocation};${pkgs.qt6.qtpositioning};${qt-advanced-docking-system}"
             }
 
@@ -251,6 +252,7 @@
             cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=$out \
+              -DBUILD_PLUGINS=ON \
               -DCMAKE_PREFIX_PATH="${pkgs.qt6.qtbase};${pkgs.qt6.qtlocation};${pkgs.qt6.qtpositioning};${qt-advanced-docking-system}"
 
             runHook postConfigure

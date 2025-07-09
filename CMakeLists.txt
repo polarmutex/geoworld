@@ -31,12 +31,13 @@ qt_standard_project_setup()
 set(SOURCES
     src/main.cpp
     src/MainWindow.cpp
-    src/MapWidget.cpp
+    src/PluginManager.cpp
 )
 
 set(HEADERS
     src/MainWindow.h
-    src/MapWidget.h
+    src/IPlugin.h
+    src/PluginManager.h
 )
 
 qt_add_executable(geoworld ${SOURCES} ${HEADERS})
@@ -52,6 +53,12 @@ target_link_libraries(geoworld PRIVATE
 
 target_include_directories(geoworld PRIVATE ${ADS_INCLUDE_DIRS})
 target_compile_options(geoworld PRIVATE ${ADS_CFLAGS_OTHER})
+
+# Build plugins
+option(BUILD_PLUGINS "Build plugins" ON)
+if(BUILD_PLUGINS)
+    add_subdirectory(plugins/mapview)
+endif()
 
 # Install target
 install(TARGETS geoworld

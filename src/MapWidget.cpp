@@ -66,7 +66,7 @@ void MapWidget::setupMap()
 
 void MapWidget::updateMapDisplay()
 {
-    // For now, just update the display
+    // Just trigger a repaint - we'll draw directly in paintEvent
     update();
 }
 
@@ -89,19 +89,44 @@ void MapWidget::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     
-    // Draw the map pixmap centered in the widget
-    QRect targetRect = rect();
-    QRect sourceRect = m_mapPixmap.rect();
+    // Fill background
+    painter.fillRect(rect(), QColor(200, 230, 255));
     
-    painter.drawPixmap(targetRect, m_mapPixmap, sourceRect);
+    // Calculate offset based on current coordinates
+    int centerX = width() / 2;
+    int centerY = height() / 2;
+    int offsetX = (int)(m_longitude * 2); // Simple scaling for demo
+    int offsetY = (int)(m_latitude * 2);
+    
+    // Draw mock continents relative to current position
+    painter.setPen(QPen(Qt::darkGray, 2));
+    painter.setBrush(QBrush(Qt::lightGray));
+    
+    painter.drawEllipse(centerX + 50 - offsetX, centerY + 50 - offsetY, 100, 80);
+    painter.drawEllipse(centerX + 200 - offsetX, centerY + 150 - offsetY, 150, 100);
+    painter.drawEllipse(centerX + 300 - offsetX, centerY + 300 - offsetY, 120, 90);
+    
+    // Draw grid lines
+    painter.setPen(QPen(Qt::gray, 1, Qt::DashLine));
+    for (int i = -offsetX % 64; i < width(); i += 64) {
+        if (i >= 0) painter.drawLine(i, 0, i, height());
+    }
+    for (int i = -offsetY % 64; i < height(); i += 64) {
+        if (i >= 0) painter.drawLine(0, i, width(), i);
+    }
+    
+    // Draw center crosshair
+    painter.setPen(QPen(Qt::red, 2));
+    painter.drawLine(centerX - 8, centerY, centerX + 8, centerY);
+    painter.drawLine(centerX, centerY - 8, centerX, centerY + 8);
     
     // Draw coordinate information
     painter.setPen(Qt::black);
     painter.setFont(QFont("Arial", 10));
     
     QString coordText = QString("Lat: %1, Lon: %2, Zoom: %3")
-                        .arg(m_latitude, 0, 'f', 6)
-                        .arg(m_longitude, 0, 'f', 6)
+                        .arg(m_latitude, 0, 'f', 3)
+                        .arg(m_longitude, 0, 'f', 3)
                         .arg(m_zoom);
     
     painter.drawText(10, 20, coordText);
@@ -180,17 +205,23 @@ void MapWidget::mouseMoveEvent(QMouseEvent *event)
     if (m_dragging) {
         QPointF delta = event->pos() - m_lastPanPoint;
         
-        // Convert pixel movement to coordinate movement
-        double latDelta = delta.y() * 0.001;
-        double lonDelta = -delta.x() * 0.001;
+        // Simple pixel to coordinate conversion
+        double latDelta = delta.y() * 0.01;
+        double lonDelta = -delta.x() * 0.01;
         
-        setCenter(m_latitude + latDelta, m_longitude + lonDelta);
+        m_latitude += latDelta;
+        m_longitude += lonDelta;
+        
+        // Clamp coordinates
+        m_latitude = qBound(-90.0, m_latitude, 90.0);
+        m_longitude = qBound(-180.0, m_longitude, 180.0);
         
         m_lastPanPoint = event->pos();
         
-        if (!m_updateTimer->isActive()) {
-            m_updateTimer->start();
-        }
+        // Immediately regenerate the map
+        updateMapDisplay();
+        
+        emit coordinateChanged(m_latitude, m_longitude);
     }
 }
 
