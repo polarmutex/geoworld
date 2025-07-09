@@ -8,9 +8,9 @@
 #include <QMenuBar>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <ads/DockManager.h>
-#include <ads/DockWidget.h>
-#include <ads/DockAreaWidget.h>
+#include <qt6advanceddocking/DockManager.h>
+#include <qt6advanceddocking/DockWidget.h>
+#include <qt6advanceddocking/DockAreaWidget.h>
 
 class MapWidget;
 

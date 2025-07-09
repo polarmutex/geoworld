@@ -22,7 +22,63 @@
         pkgs,
         system,
         ...
-      }: {
+      }: let
+        # Create qt-advanced-docking-system package since it's not in nixpkgs
+        qt-advanced-docking-system = pkgs.stdenv.mkDerivation rec {
+          pname = "qt-advanced-docking-system";
+          version = "4.3.1";
+          
+          src = pkgs.fetchFromGitHub {
+            owner = "githubuser0xFFFF";
+            repo = "Qt-Advanced-Docking-System";
+            rev = "${version}";
+            sha256 = "sha256-5wOmhjV/RoKvd018YC4J8EFCCkq+3B6AXAsPtW+RZHU=";
+          };
+          
+          nativeBuildInputs = with pkgs; [
+            cmake
+            qt6.wrapQtAppsHook
+            pkg-config
+          ];
+          
+          buildInputs = with pkgs; [
+            qt6.qtbase
+            qt6.qtdeclarative
+          ];
+          
+          cmakeFlags = [
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DBUILD_EXAMPLES=OFF"
+            "-DBUILD_TESTS=OFF"
+            "-DADS_VERSION=${version}"
+            "-DBUILD_STATIC=OFF"
+          ];
+          
+          # Patch the CMakeLists.txt to fix version issue
+          postPatch = ''
+            substituteInPlace CMakeLists.txt \
+              --replace 'set(ADS_VERSION ''${ADS_VERSION_MAJOR}.''${ADS_VERSION_MINOR}.''${ADS_VERSION_PATCH})' \
+                        'set(ADS_VERSION ${version})'
+          '';
+          
+          # Create a pkg-config file manually if not created
+          postInstall = ''
+            mkdir -p $out/lib/pkgconfig
+            cat > $out/lib/pkgconfig/qtadvanceddocking.pc << EOF
+            prefix=$out
+            exec_prefix=$out
+            libdir=$out/lib
+            includedir=$out/include
+            
+            Name: Qt Advanced Docking System
+            Description: Advanced Docking System for Qt applications
+            Version: ${version}
+            Libs: -L$out/lib -lqtadvanceddocking
+            Cflags: -I$out/include -I$out/include/ads
+            EOF
+          '';
+        };
+      in {
         # Development shell
         devShells.default = pkgs.mkShell {
           name = "geoworld-dev";
@@ -33,11 +89,12 @@
             ninja
             pkg-config
 
-            # Conan package manager
-            conan
+            # Qt Advanced Docking System
+            qt-advanced-docking-system
 
             # Qt6 development
-            qt6.full
+            qt6.qtbase
+            qt6.qtdeclarative
             qt6.qtlocation
             qt6.qtpositioning
             qt6.qtwebengine
@@ -93,10 +150,9 @@
             echo "=================================="
             echo "Qt version: $(qmake -query QT_VERSION)"
             echo "CMake version: $(cmake --version | head -n1)"
-            echo "Conan version: $(conan --version)"
+            echo "Qt Advanced Docking System available"
             echo ""
             echo "Available commands:"
-            echo "  setup-conan  - Install Conan dependencies"
             echo "  configure    - Configure CMake build"
             echo "  build        - Build the project"
             echo "  run          - Run the application"
@@ -110,40 +166,36 @@
             export QML_IMPORT_PATH="${pkgs.qt6.qtdeclarative}/lib/qt-6/qml"
 
             # Set up build environment
-            export CMAKE_PREFIX_PATH="${pkgs.qt6.qtbase}:${pkgs.qt6.qtlocation}:${pkgs.qt6.qtpositioning}"
+            export CMAKE_PREFIX_PATH="${pkgs.qt6.qtbase}:${pkgs.qt6.qtlocation}:${pkgs.qt6.qtpositioning}:${qt-advanced-docking-system}"
             export PKG_CONFIG_PATH="${pkgs.qt6.qtbase}/lib/pkgconfig:${pkgs.qt6.qtlocation}/lib/pkgconfig"
 
             # Helper functions
-            setup-conan() {
-              echo "Setting up Conan dependencies..."
-              conan profile detect --force
-              conan install . --build=missing
-            }
 
             configure() {
               echo "Configuring CMake build..."
-              cmake --preset=default
+              cmake -S . -B build \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_PREFIX_PATH="${pkgs.qt6.qtbase};${pkgs.qt6.qtlocation};${pkgs.qt6.qtpositioning};${qt-advanced-docking-system}"
             }
 
             build() {
               echo "Building GeoWorld..."
-              cmake --build --preset=default
+              cmake --build build --parallel $NIX_BUILD_CORES
             }
 
             run() {
               echo "Running GeoWorld..."
-              ./build/default/geoworld
+              ./build/geoworld
             }
 
             clean() {
               echo "Cleaning build artifacts..."
               rm -rf build/
-              rm -rf ~/.conan2/
             }
 
             test() {
               echo "Running tests..."
-              ctest --preset=default
+              cd build && ctest
             }
           '';
         };
@@ -160,7 +212,6 @@
             ninja
             pkg-config
             qt6.wrapQtAppsHook
-            conan
           ];
 
           buildInputs = with pkgs; [
@@ -170,6 +221,7 @@
             qt6.qtpositioning
             qt6.qtwebengine
             qt6.qtquick3d
+            qt-advanced-docking-system
 
             # System libraries
             xorg.libX11
@@ -195,17 +247,11 @@
           configurePhase = ''
             runHook preConfigure
 
-            # Setup Conan
-            export CONAN_HOME=$TMPDIR/conan
-            conan profile detect --force
-            conan install . --build=missing --output-folder=build
-
             # Configure CMake
             cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=$out \
-              -DCMAKE_PREFIX_PATH="${pkgs.qt6.qtbase};${pkgs.qt6.qtlocation};${pkgs.qt6.qtpositioning}" \
-              -DCMAKE_TOOLCHAIN_FILE=build/generators/conan_toolchain.cmake
+              -DCMAKE_PREFIX_PATH="${pkgs.qt6.qtbase};${pkgs.qt6.qtlocation};${pkgs.qt6.qtpositioning};${qt-advanced-docking-system}"
 
             runHook postConfigure
           '';

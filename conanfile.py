@@ -28,13 +28,16 @@ class GeoWorldConan(ConanFile):
     def configure(self):
         if self.options.shared:
             self.options.rm_safe("fPIC")
+        # Force Qt to build from source on Linux since binaries aren't available
+        if self.settings.os == "Linux":
+            self.options["qt"].shared = True
     
     def layout(self):
         cmake_layout(self)
     
     def requirements(self):
-        self.requires("qt/6.6.0")
-        self.requires("qt-advanced-docking-system/4.2.1")
+        self.requires("qt/6.8.3")
+        self.requires("qt-advanced-docking-system/4.3.1")
     
     def generate(self):
         deps = CMakeDeps(self)

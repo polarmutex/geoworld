@@ -5,6 +5,9 @@
 
 int main(int argc, char *argv[])
 {
+    // Set Qt platform to xcb for proper mouse handling
+    qputenv("QT_QPA_PLATFORM", "xcb");
+    
     QApplication app(argc, argv);
     
     app.setApplicationName("GeoWorld");

@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QSplitter>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -47,6 +48,8 @@ void MainWindow::setupUI()
     
     // Create map widget
     m_mapWidget = new MapWidget(this);
+    
+    // Map widget will be added to docking system, not main layout
     
     // Connect map widget signals
     connect(m_mapWidget, &MapWidget::coordinateChanged, 

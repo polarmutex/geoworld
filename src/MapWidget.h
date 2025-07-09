@@ -1,15 +1,18 @@
 #pragma once
 
 #include <QWidget>
-#include <QQuickWidget>
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
 #include <QTimer>
-#include <QQmlEngine>
-#include <QQmlContext>
+#include <QPainter>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QPixmap>
+#include <QLabel>
 
-class MapWidget : public QQuickWidget
+class MapWidget : public QWidget
 {
     Q_OBJECT
 
@@ -41,15 +44,15 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
-    void onMapReady();
-    void onMapCenterChanged();
-    void onMapZoomChanged();
     void updateCoordinates();
+    void onTileDownloaded();
 
 private:
-    void setupQmlEngine();
-    void updateMapProperties();
+    void setupMap();
+    void updateMapDisplay();
+    void loadMapTile(int x, int y, int zoom);
     QPointF screenToMapCoordinate(const QPointF &screenPoint) const;
+    void paintEvent(QPaintEvent *event) override;
     
     // Map state
     double m_latitude;
@@ -61,6 +64,12 @@ private:
     bool m_dragging;
     QPointF m_lastPanPoint;
     QTimer *m_updateTimer;
+    
+    // Network manager for tile loading
+    QNetworkAccessManager *m_networkManager;
+    
+    // Map display
+    QPixmap m_mapPixmap;
     
     // Default map settings
     static constexpr double DEFAULT_LATITUDE = 39.8283;  // Washington, DC
