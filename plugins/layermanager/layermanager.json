@@ -1,0 +1,13 @@
+{
+    "name": "Layer Manager",
+    "version": "1.0.0",
+    "description": "Layer management widget for controlling data layers, visibility, ordering, and properties",
+    "author": "GeoWorld Team",
+    "category": "layer-management",
+    "capabilities": ["layer-manager", "layer-ordering", "data-visualization"],
+    "dependencies": ["QtCore", "QtWidgets"],
+    "provides": {
+        "services": ["layer-manager", "layer-ordering"],
+        "widgets": ["LayerManagerWidget"]
+    }
+}

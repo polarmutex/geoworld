@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_mapWidget(nullptr)
     , m_dockManager(nullptr)
     , m_pluginManager(nullptr)
+    , m_dataProviderManager(nullptr)
     , m_coordLabel(nullptr)
     , m_zoomLabel(nullptr)
     , m_scaleLabel(nullptr)
@@ -29,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupToolBar();
     setupStatusBar();
     setupDockingSystem();
+    setupDataBrowser();
 }
 
 MainWindow::~MainWindow()
@@ -164,6 +166,10 @@ void MainWindow::onZoomChanged(int zoom)
 
 void MainWindow::setupPlugins()
 {
+    // Initialize data provider manager first
+    m_dataProviderManager = new DataProviderManager(this);
+    
+    // Initialize plugin manager
     m_pluginManager = new PluginManager(this);
     
     // Connect plugin manager signals
@@ -174,6 +180,9 @@ void MainWindow::setupPlugins()
     
     // Load plugins from standard locations
     m_pluginManager->loadPlugins();
+    
+    // Register data providers from loaded plugins
+    registerDataProviders();
 }
 
 void MainWindow::loadMapPlugin()
@@ -224,4 +233,60 @@ void MainWindow::onPluginUnloaded(const QString& name)
 {
     qDebug() << "Plugin unloaded:" << name;
     statusBar()->showMessage(QString("Plugin unloaded: %1").arg(name), 3000);
+}
+
+void MainWindow::registerDataProviders()
+{
+    if (!m_dataProviderManager || !m_pluginManager) {
+        return;
+    }
+    
+    // Look for data provider plugins and register them
+    QStringList plugins = m_pluginManager->availablePlugins();
+    
+    for (const QString& pluginName : plugins) {
+        IPlugin* plugin = m_pluginManager->getPlugin(pluginName);
+        if (plugin && plugin->capabilities().contains("data-provider")) {
+            // Try to get data provider from plugin (this would need to be extended in actual plugins)
+            qDebug() << "Found data provider plugin:" << pluginName;
+            // TODO: Extract IDataProvider from plugin and register with m_dataProviderManager
+        }
+    }
+}
+
+void MainWindow::setupDataBrowser()
+{
+    if (!m_dataProviderManager || !m_pluginManager) {
+        return;
+    }
+    
+    // Look for data browser plugin
+    QStringList plugins = m_pluginManager->availablePlugins();
+    
+    for (const QString& pluginName : plugins) {
+        IPlugin* plugin = m_pluginManager->getPlugin(pluginName);
+        if (plugin && plugin->capabilities().contains("layer-manager")) {
+            // Try to cast to DataBrowserPlugin to set the data provider manager
+            QObject* pluginObj = dynamic_cast<QObject*>(plugin);
+            if (pluginObj) {
+                // Use metaobject to call setDataProviderManager
+                QMetaObject::invokeMethod(pluginObj, "setDataProviderManager",
+                                        Q_ARG(DataProviderManager*, m_dataProviderManager));
+            }
+            
+            QWidget* layerManagerWidget = plugin->createWidget(this);
+            if (layerManagerWidget) {
+                // Create dock widget for layer manager
+                ads::CDockWidget* layerManagerDock = new ads::CDockWidget("Layer Manager");
+                layerManagerDock->setWidget(layerManagerWidget);
+                
+                if (m_dockManager) {
+                    m_dockManager->addDockWidget(ads::LeftDockWidgetArea, layerManagerDock);
+                }
+                
+                qDebug() << "Layer manager plugin loaded:" << pluginName;
+                break;
+            }
+        }
+    }
 }

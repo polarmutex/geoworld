@@ -12,6 +12,7 @@
 #include <qt6advanceddocking/DockWidget.h>
 #include <qt6advanceddocking/DockAreaWidget.h>
 #include "PluginManager.h"
+#include "DataProviderManager.h"
 
 class IPlugin;
 
@@ -37,11 +38,14 @@ private:
     void setupDockingSystem();
     void setupPlugins();
     void loadMapPlugin();
+    void registerDataProviders();
+    void setupDataBrowser();
     
     // UI Components
     QWidget *m_mapWidget;
     ads::CDockManager *m_dockManager;
     PluginManager *m_pluginManager;
+    DataProviderManager *m_dataProviderManager;
     
     // Status bar components
     QLabel *m_coordLabel;

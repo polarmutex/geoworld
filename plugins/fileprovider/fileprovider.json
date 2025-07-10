@@ -1,0 +1,13 @@
+{
+    "name": "File Data Provider",
+    "version": "1.0.0",
+    "description": "Provides geospatial data from local files including GeoJSON, CSV, and KML",
+    "author": "GeoWorld Team",
+    "category": "data-provider",
+    "capabilities": ["data-provider", "import-export"],
+    "dependencies": ["QtCore", "QtWidgets"],
+    "provides": {
+        "services": ["file-data-provider"],
+        "formats": ["geojson", "csv", "kml", "json"]
+    }
+}

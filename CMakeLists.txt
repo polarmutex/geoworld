@@ -32,12 +32,15 @@ set(SOURCES
     src/main.cpp
     src/MainWindow.cpp
     src/PluginManager.cpp
+    src/DataProviderManager.cpp
 )
 
 set(HEADERS
     src/MainWindow.h
     src/IPlugin.h
+    src/IDataProvider.h
     src/PluginManager.h
+    src/DataProviderManager.h
 )
 
 qt_add_executable(geoworld ${SOURCES} ${HEADERS})
@@ -57,7 +60,7 @@ target_compile_options(geoworld PRIVATE ${ADS_CFLAGS_OTHER})
 # Build plugins
 option(BUILD_PLUGINS "Build plugins" ON)
 if(BUILD_PLUGINS)
-    add_subdirectory(plugins/mapview)
+    add_subdirectory(plugins)
 endif()
 
 # Install target
